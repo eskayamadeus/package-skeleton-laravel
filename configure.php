@@ -47,6 +47,12 @@ function title_case(string $subject): string {
     return str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $subject)));
 }
 
+if (!function_exists('str_starts_with')) {
+    function str_starts_with($haystack, $needle) {
+        return (string)$needle !== '' && strncmp($haystack, $needle, strlen($needle)) === 0;
+    }
+}
+
 function replace_in_file(string $file, array $replacements): void {
     $contents = file_get_contents($file);
 
@@ -134,17 +140,32 @@ foreach ($files as $file) {
         ':package_description' => $description,
     ]);
 
-    match (true) {
-        str_contains($file, 'src/Skeleton.php') => rename($file, './src/' . $className . '.php'),
-        str_contains($file, 'src/SkeletonServiceProvider.php') => rename($file, './src/' . $className . 'ServiceProvider.php'),
-        str_contains($file, 'src/SkeletonFacade.php') => rename($file, './src/' . $className . 'Facade.php'),
-        str_contains($file, 'src/Commands/SkeletonCommand.php') => rename($file, './src/Commands/' . $className . 'Command.php'),
-        str_contains($file, 'database/migrations/create_skeleton_table.php.stub') => rename($file, './database/migrations/create_' . $packageSlugWithoutPrefix . '_table.php.stub'),
-        str_contains($file, 'config/skeleton.php') => rename($file, './config/' . $packageSlugWithoutPrefix . '.php'),
-        default => [],
-    };
+    switch (true) {
+        case strpos($file, 'src/Skeleton.php'):
+            rename($file, './src/' . $className . '.php');
+        
+        case strpos($file, 'src/SkeletonServiceProvider.php'):
+            rename($file, './src/' . $className . 'ServiceProvider.php');
+        
+        case strpos($file, 'src/SkeletonFacade.php'):
+            rename($file, './src/' . $className . 'Facade.php');
+        
+        case strpos($file, 'src/Commands/SkeletonCommand.php'):
+            rename($file, './src/Commands/' . $className . 'Command.php');
+        
+        case strpos($file, 'database/migrations/create_skeleton_table.php.stub'):
+            rename($file, './database/migrations/create_' . $packageSlugWithoutPrefix . '_table.php.stub');
+        
+        case strpos($file, 'config/Skeleton.php'):
+            rename($file, './config/' . $packageSlugWithoutPrefix . '.php');
+        
+        default:
+            # code...
+            [];
+            break;
+    }
 }
-
+    
 confirm('Execute `composer install` and run tests?') && run('composer install && composer test');
 
 confirm('Let this script delete itself?', true) && unlink(__FILE__);
